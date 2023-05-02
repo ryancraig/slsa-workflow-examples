@@ -84,7 +84,7 @@ jobs:
 
       - name: Sign image
         run: |
-          cosign sign "${IMAGE_NAME}@${IMAGE_DIGEST}"
+          cosign sign -y "${IMAGE_NAME}@${IMAGE_DIGEST}"
           echo "::notice title=Verify signature::COSIGN_EXPERIMENTAL=1 cosign verify ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq '.[0]'"
           echo "::notice title=Download signatures::COSIGN_EXPERIMENTAL=1 cosign download signature ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq -s ."
           echo "::notice title=Inspect signature bundle::COSIGN_EXPERIMENTAL=1 cosign download signature ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq -s '.Bundle.Payload.body |= @base64d | .[0].Bundle.Payload.body | fromjson'"
