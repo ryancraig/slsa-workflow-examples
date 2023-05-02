@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/slsa-workflow-examples-docker
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-22.04
 
     permissions:
@@ -60,14 +60,14 @@ jobs:
 
   sign:
     runs-on: ubuntu-22.04
-    needs: [docker]
+    needs: [build]
 
     permissions:
       packages: write
       id-token: write
 
     env:
-      IMAGE_DIGEST: ${{ needs.docker.outputs.image-digest }}
+      IMAGE_DIGEST: ${{ needs.build.outputs.image-digest }}
 
     steps:
       - name: Install cosign
@@ -92,14 +92,14 @@ jobs:
 
   sbom:
     runs-on: ubuntu-22.04
-    needs: [docker]
+    needs: [build]
 
     permissions:
       packages: write
       id-token: write
 
     env:
-      IMAGE_DIGEST: ${{ needs.docker.outputs.image-digest }}
+      IMAGE_DIGEST: ${{ needs.build.outputs.image-digest }}
 
     steps:
       - name: Install cosign
@@ -129,7 +129,7 @@ jobs:
           echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${IMAGE_NAME}@${IMAGE_DIGEST} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
 
   provenance:
-    needs: [docker]
+    needs: [build]
     permissions:
       actions: read # for detecting the Github Actions environment.
       id-token: write # for creating OIDC tokens for signing.
@@ -137,8 +137,9 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.5.0
     with:
-      image: ${{ needs.docker.outputs.image }}
-      digest: ${{ needs.docker.outputs.digest }}
+      registry: ghcr.io
+      image: ${{ needs.build.outputs.image }}
+      digest: ${{ needs.build.outputs.digest }}
       registry-username: ${{ github.actor }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
