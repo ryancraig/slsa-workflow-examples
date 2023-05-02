@@ -103,7 +103,7 @@ jobs:
 
     steps:
       - name: Install cosign
-        uses: sigstore/cosign-installer@3.0.3
+        uses: sigstore/cosign-installer@v3.0.3
         with:
           cosign-release: v2.0.2
 
