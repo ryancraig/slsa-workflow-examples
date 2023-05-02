@@ -46,7 +46,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
+            type=sha
           labels: |
             label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/slsa-workflow-examples" \
             label "org.opencontainers.image.created=$(date --iso-8601=seconds)" \
