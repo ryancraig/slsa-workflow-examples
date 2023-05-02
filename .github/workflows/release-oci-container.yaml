@@ -129,44 +129,16 @@ jobs:
           echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${IMAGE_NAME}@${IMAGE_DIGEST} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
 
   provenance:
-    runs-on: ubuntu-22.04
     needs: [docker]
-
     permissions:
-      packages: write
-      id-token: write
-
-    env:
-      IMAGE_DIGEST: ${{ needs.docker.outputs.image-digest }}
-      PROVENANCE_FILE: provenance.att
-
-    steps:
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.0.3
-        with:
-          cosign-release: v2.0.2
-
-      - name: Generate provenance
-        uses: philips-labs/slsa-provenance-action@v0.7.2
-        with:
-          command: generate
-          subcommand: container
-          arguments: --repository "${IMAGE_NAME}" --output-path "${PROVENANCE_FILE}" --digest "${IMAGE_DIGEST}" --tags "${IMAGE_TAGS}"
-        env:
-          COSIGN_EXPERIMENTAL: 0
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          IMAGE_TAGS: ${{ needs.docker.outputs.image-tags }}
-
-      - name: Login to ghcr.io
-        uses: docker/login-action@v2.1.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Attach provenance
-        run: |
-          jq '.predicate' "${PROVENANCE_FILE}" > provenance-predicate.att
-          echo "y" | cosign attest --predicate provenance-predicate.att --type slsaprovenance "${IMAGE_NAME}@${IMAGE_DIGEST}"
-          echo "::notice title=Verify provenance attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${IMAGE_NAME}@${IMAGE_DIGEST}"
-          echo "::notice title=Download provenance attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${IMAGE_NAME}@${IMAGE_DIGEST} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://slsa.dev/provenance/v0.2\")'"
+      actions: read # for detecting the Github Actions environment.
+      id-token: write # for creating OIDC tokens for signing.
+      packages: write # for uploading attestations.
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.5.0
+    with:
+      image: ${{ needs.docker.outputs.image }}
+      digest: ${{ needs.docker.outputs.digest }}
+      registry-username: ${{ github.actor }}
+    secrets:
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
