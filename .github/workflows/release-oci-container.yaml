@@ -1,7 +1,5 @@
 name: Release OCI Container
 
-name: Release OCI Container
-
 on:
   push:
     tags:
