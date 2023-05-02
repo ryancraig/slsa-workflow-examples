@@ -98,11 +98,11 @@ jobs:
 
       - name: Sign image
         run: |
-          echo "y" | cosign sign "${IMAGE_NAME}@${IMAGE_DIGEST}"
-          echo "::notice title=Verify signature::COSIGN_EXPERIMENTAL=1 cosign verify ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq '.[0]'"
-          echo "::notice title=Download signatures::COSIGN_EXPERIMENTAL=1 cosign download signature ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq -s ."
-          echo "::notice title=Inspect signature bundle::COSIGN_EXPERIMENTAL=1 cosign download signature ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq -s '.Bundle.Payload.body |= @base64d | .[0].Bundle.Payload.body | fromjson'"
-          echo "::notice title=Inspect certificates::COSIGN_EXPERIMENTAL=1 cosign download signature ${IMAGE_NAME}:${GITHUB_REF_NAME} | jq -r '.Bundle.Payload.body |= @base64d | .Bundle.Payload.body | fromjson | .spec.signature.publicKey.content |= @base64d | .spec.signature.publicKey.content' | openssl x509 -text"
+          echo "y" | cosign sign "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          echo "::notice title=Verify signature::COSIGN_EXPERIMENTAL=1 cosign verify ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq '.[0]'"
+          echo "::notice title=Download signatures::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -s ."
+          echo "::notice title=Inspect signature bundle::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -s '.Bundle.Payload.body |= @base64d | .[0].Bundle.Payload.body | fromjson'"
+          echo "::notice title=Inspect certificates::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -r '.Bundle.Payload.body |= @base64d | .Bundle.Payload.body | fromjson | .spec.signature.publicKey.content |= @base64d | .spec.signature.publicKey.content' | openssl x509 -text"
 
   sbom:
     runs-on: ubuntu-22.04
@@ -136,11 +136,11 @@ jobs:
 
       - name: Attach SBOM to image
         run: |
-          syft "${IMAGE_NAME}@${IMAGE_DIGEST}" -o spdx-json=sbom-spdx.json
+          syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=sbom-spdx.json
           grype sbom:sbom-spdx.json
-          echo "y" | cosign attest --predicate sbom-spdx.json --type spdx "${IMAGE_NAME}@${IMAGE_DIGEST}"
-          echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${IMAGE_NAME}@${IMAGE_DIGEST}"
-          echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${IMAGE_NAME}@${IMAGE_DIGEST} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
+          echo "y" | cosign attest --predicate sbom-spdx.json --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
 
   # This step calls the container workflow to generate provenance and push it to
   # the container registry.
