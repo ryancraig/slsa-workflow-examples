@@ -7,10 +7,10 @@ on:
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # This step builds our image, pushes it, and outputs the repo hash digest.
+  # Build our OCI container image, push it to the OCI container registry, and output the repo hash digest.
   build:
     permissions:
       contents: read
@@ -38,7 +38,7 @@ jobs:
         uses: docker/metadata-action@69f6fc9d46f2f8bf0d5491e4aabe0bb8c6a4678a # v4.0.1
         with:
           images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-          # generate Docker tags based on the following events/attributes
+          # generate OCI container image tags based on the following events/attributes
           tags: |
             type=schedule
             type=ref,event=branch
@@ -46,9 +46,9 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-            type=sha
+            type=sha, prefix=commit-sha-
           labels: |
-            label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/slsa-workflow-examples" \
+            label "org.opencontainers.image.source=https://github.com/${{ github.repository }}" \
             label "org.opencontainers.image.created=$(date --iso-8601=seconds)" \
             label "org.opencontainers.image.title=slsa-workflow-examples-docker" \
             label "org.opencontainers.image.revision=${revision}" \
@@ -72,6 +72,7 @@ jobs:
           # available to the inputs of a reusable workflow call.
           image_name="${IMAGE_REGISTRY}/${IMAGE_NAME}"
           echo "image=$image_name" >> "$GITHUB_OUTPUT"
+  # Sign the image digest and push it to the OCI container registry        
   sign:
     runs-on: ubuntu-22.04
     needs: [build]
@@ -103,7 +104,7 @@ jobs:
           echo "::notice title=Download signatures::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -s ."
           echo "::notice title=Inspect signature bundle::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -s '.Bundle.Payload.body |= @base64d | .[0].Bundle.Payload.body | fromjson'"
           echo "::notice title=Inspect certificates::COSIGN_EXPERIMENTAL=1 cosign download signature ${{ needs.build.outputs.image }}:${GITHUB_REF_NAME} | jq -r '.Bundle.Payload.body |= @base64d | .Bundle.Payload.body | fromjson | .spec.signature.publicKey.content |= @base64d | .spec.signature.publicKey.content' | openssl x509 -text"
-
+  # Create and sign the the image SBOM and push it to the OCI container registry 
   sbom:
     runs-on: ubuntu-22.04
     needs: [build]
@@ -142,8 +143,7 @@ jobs:
           echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
           echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
 
-  # This step calls the container workflow to generate provenance and push it to
-  # the container registry.
+  # Generate supply chain provenance and push it to the OCI container registry.
   provenance:
     needs: [build]
     permissions:
