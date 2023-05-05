@@ -158,3 +158,30 @@ jobs:
       registry-username: ${{ github.actor }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+  inspection:
+    needs: [build,provenance]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.0.3
+        with:
+          cosign-release: v2.0.2
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install jq
+
+      - name: Cosign tree
+        run: cosign tree ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+
+      - name: Cosign download attestation and inspect payload
+        run: cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq -r '.payload' | base64 -d | jq
+
+      - name: Verify image using slsa-verifier
+        run: |
+          slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
+              --source-uri ${{ github.repository }} \
+              --source-tag ${{ github.ref_name }} \
+              --builder-id https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v1.5.0
+
+
