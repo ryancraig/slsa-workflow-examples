@@ -135,22 +135,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Attach SBOM to image
-        run: |
-          syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=${{ needs.build.outputs.digest }}"-spdx.sbom
-          grype sbom:${{ needs.build.outputs.digest }}"-spdx.sbom
-          echo "y" | cosign attest --predicate ${{ needs.build.outputs.digest }}"-spdx.sbom --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
-          echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify --sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
-          echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
-
-
       # - name: Attach SBOM to image
       #   run: |
-      #     syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=sbom-spdx.json
-      #     grype sbom:sbom-spdx.json
-      #     echo "y" | cosign attest --predicate sbom-spdx.json --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
-      #     echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
-      #     echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
+      #     syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=${{ needs.build.outputs.digest }}"-spdx.sbom
+      #     grype sbom:${{ needs.build.outputs.digest }}"-spdx.sbom
+      #     echo "y" | cosign attest --predicate ${{ needs.build.outputs.digest }}"-spdx.sbom --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+      #     echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify --sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+      #     echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
+
+      - name: Attach SBOM to image
+        run: |
+          syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=${{ needs.build.outputs.digest }}-spdx.json
+          grype sbom:${{ needs.build.outputs.digest }}-spdx.json
+          echo "y" | cosign attest --predicate ${{ needs.build.outputs.digest }}-spdx.json --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
 
   # Generate supply chain provenance and push it to the OCI container registry.
   provenance:
@@ -190,7 +189,7 @@ jobs:
         # run: cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq -r '.payload' | base64 -d | jq
         run: |
           cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | \
-          jq -r '.payload' | base64 -d | jq 'select(.predicateType == "https://slsa.dev/provenance/v0.1")'
+          jq -r '.payload' | base64 -d | jq 'select(.predicateType == "https://slsa.dev/provenance/v0.2")'
 
       - name: Verify image using slsa-verifier
         run: |
