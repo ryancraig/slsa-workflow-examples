@@ -163,6 +163,9 @@ jobs:
     needs: [build,provenance]
     runs-on: ubuntu-latest
     steps:
+      - name: Install SLSA verifier
+        uses: slsa-framework/slsa-verifier/actions/installer@v2.2.0
+        
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.0.3
         with:
