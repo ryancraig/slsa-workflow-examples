@@ -142,7 +142,7 @@ jobs:
       
       - name: Sign SBOM
         run: |
-          echo "y" | COSIGN_EXPERIMENTAL=1 cosign sign --type sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+          echo "y" | COSIGN_EXPERIMENTAL=1 cosign sign --attachment sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
 
       - name: Verify SBOM signature
         run: |
