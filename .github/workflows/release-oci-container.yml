@@ -146,7 +146,7 @@ jobs:
 
       - name: Verify SBOM signature
         run: |
-          COSIGN_EXPERIMENTAL=1 cosign verify --certificate-identity ryan.s.craig@gmail.com --certificate-identity-regexp https://github.com/ryancraig/slsa-workflow-examples/.* --attachment sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom
+          COSIGN_EXPERIMENTAL=1 cosign verify --certificate-identity ryan.s.craig@gmail.com --certificate-oidc-issuer-regexp https://github.com/ryancraig/slsa-workflow-examples/.* --attachment sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom
           # echo "::notice title=Verify SBOM signature::COSIGN_EXPERIMENTAL=1 cosign verify --attachment sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom"
 
   # # Generate supply chain provenance and push it to the OCI container registry.
