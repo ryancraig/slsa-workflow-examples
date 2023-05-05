@@ -200,8 +200,10 @@ jobs:
       - name: Cosign download attestation and inspect SPDX SBOM payload
         run: |
           COSIGN_EXPERIMENTAL=1 cosign download attestation \
-          ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | \
-          .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
+          ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | \
+          jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == "https://spdx.dev/Document") | \
+          .predicate.Data | fromjson'
+
 
       - name: Verify SPDX SBOM
         run: |
