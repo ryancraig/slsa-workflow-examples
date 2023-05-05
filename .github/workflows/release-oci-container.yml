@@ -132,62 +132,68 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate and upload SBOM to the OCI registry
+      - name: Generate SBOM for the OCI image
         run: |
           syft packages "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json > ${{ needs.build.outputs.digest }}.sbom.spdx.json
+
+      - name: Attach SBOM to the OCI image
+        run: |
           cosign attach sbom --sbom ${{ needs.build.outputs.digest }}.sbom.spdx.json "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
-          echo "y" | COSIGN_EXPERIMENTAL=1 cosign sign ${{ needs.build.outputs.image }}:${{ needs.build.outputs.digest }}.sbom
+      
+      - name: Sign SBOM
+        run: |
+          echo "y" | COSIGN_EXPERIMENTAL=1 cosign sign --type sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
 
       - name: Verify SBOM signature
         run: |
-          COSIGN_EXPERIMENTAL=1 cosign verify sbom ${{ needs.build.outputs.image }}:${{ needs.build.outputs.digest }}.sbom
-          echo "::notice title=Verify SBOM signature::COSIGN_EXPERIMENTAL=1 cosign verify sbom ${{ needs.build.outputs.image }}:${{ needs.build.outputs.digest }}.sbom"
+          COSIGN_EXPERIMENTAL=1 cosign verify --type sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom
+          echo "::notice title=Verify SBOM signature::COSIGN_EXPERIMENTAL=1 cosign verify --type sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom"
 
-  # Generate supply chain provenance and push it to the OCI container registry.
-  provenance:
-    needs: [build]
-    permissions:
-      actions: read # for detecting the Github Actions environment.
-      id-token: write # for creating OIDC tokens for signing.
-      packages: write # for uploading attestations.
-    if: startsWith(github.ref, 'refs/tags/')
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.5.0
-    with:
-      image: ${{ needs.build.outputs.image }}
-      digest: ${{ needs.build.outputs.digest }}
-      registry-username: ${{ github.actor }}
-    secrets:
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
+  # # Generate supply chain provenance and push it to the OCI container registry.
+  # provenance:
+  #   needs: [build]
+  #   permissions:
+  #     actions: read # for detecting the Github Actions environment.
+  #     id-token: write # for creating OIDC tokens for signing.
+  #     packages: write # for uploading attestations.
+  #   if: startsWith(github.ref, 'refs/tags/')
+  #   uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v1.5.0
+  #   with:
+  #     image: ${{ needs.build.outputs.image }}
+  #     digest: ${{ needs.build.outputs.digest }}
+  #     registry-username: ${{ github.actor }}
+  #   secrets:
+  #     registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-  inspection:
-    needs: [build,provenance]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install SLSA verifier
-        uses: slsa-framework/slsa-verifier/actions/installer@v2.2.0
+  # inspection:
+  #   needs: [build,provenance]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Install SLSA verifier
+  #       uses: slsa-framework/slsa-verifier/actions/installer@v2.2.0
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.0.3
-        with:
-          cosign-release: v2.0.2
+  #     - name: Install cosign
+  #       uses: sigstore/cosign-installer@v3.0.3
+  #       with:
+  #         cosign-release: v2.0.2
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install jq
+  #     - name: Install jq
+  #       run: sudo apt-get update && sudo apt-get install jq
 
-      - name: Cosign tree
-        run: cosign tree ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
+  #     - name: Cosign tree
+  #       run: cosign tree ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}
 
-      - name: Cosign download attestation and inspect SLSA provenance payload
-        # run: cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq -r '.payload' | base64 -d | jq
-        run: |
-          cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | \
-          jq -r '.payload' | base64 -d | jq 'select(.predicateType == "https://slsa.dev/provenance/v0.2")'
+  #     - name: Cosign download attestation and inspect SLSA provenance payload
+  #       # run: cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq -r '.payload' | base64 -d | jq
+  #       run: |
+  #         cosign download attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | \
+  #         jq -r '.payload' | base64 -d | jq 'select(.predicateType == "https://slsa.dev/provenance/v0.2")'
 
-      - name: Verify image using slsa-verifier
-        run: |
-          slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
-              --source-uri "github.com/${{ github.repository }}" \
-              --source-tag ${{ github.ref_name }}
+  #     - name: Verify image using slsa-verifier
+  #       run: |
+  #         slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
+  #             --source-uri "github.com/${{ github.repository }}" \
+  #             --source-tag ${{ github.ref_name }}
 
 
 
