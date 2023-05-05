@@ -146,7 +146,8 @@ jobs:
 
       - name: Verify SBOM signature
         run: |
-          MODIFIED_DIGEST=$(echo "${{ needs.build.outputs.digest }}" | sed 's/sha:/sha-/g')
+          MODIFIED_DIGEST=$(echo "${{ needs.build.outputs.digest }}" | sed 's/sha256:/sha256-/')
+          echo $MODIFIED_DIGEST
           COSIGN_EXPERIMENTAL=1 cosign verify --certificate-identity ryan.s.craig@gmail.com --certificate-oidc-issuer-regexp https://github.com/ryancraig/slsa-workflow-examples/.* ${{ needs.build.outputs.image }}:$MODIFIED_DIGEST.sbom
 
           # echo "::notice title=Verify SBOM signature::COSIGN_EXPERIMENTAL=1 cosign verify --attachment sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}.sbom"
