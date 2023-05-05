@@ -156,7 +156,6 @@ jobs:
       image: ${{ needs.build.outputs.image }}
       digest: ${{ needs.build.outputs.digest }}
       registry-username: ${{ github.actor }}
-      source-uri: git+https://github.com/${{ github.repository }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -184,7 +183,7 @@ jobs:
       - name: Verify image using slsa-verifier
         run: |
           slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
-              --source-uri "git+https://github.com/${{ github.repository }}" \
+              --source-uri "github.com/${{ github.repository }}" \
               --source-tag ${{ github.ref_name }}
 
 
