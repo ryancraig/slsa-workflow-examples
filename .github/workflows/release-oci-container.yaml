@@ -183,8 +183,8 @@ jobs:
       - name: Verify image using slsa-verifier
         run: |
           slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
-              --source-uri ${{ github.repository }} \
+              --source-uri "git+${{ github.repository }}" \
               --source-tag ${{ github.ref_name }} \
-              --builder-id https://github.com/ryancraig/slsa-workflow-examples/.github/workflows/release-oci-container.yaml
+              --builder-id https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v1.5.0
 
 
