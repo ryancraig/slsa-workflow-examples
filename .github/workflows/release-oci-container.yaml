@@ -142,7 +142,7 @@ jobs:
       #     echo "y" | cosign attest --predicate ${{ needs.build.outputs.digest }}"-spdx.sbom --type spdx "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
       #     echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify --sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
       #     echo "::notice title=Download SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign download sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
-
+      #      echo "::notice title=Verify SBOM attestation::COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${IMAGE_NAME}@${IMAGE_DIGEST} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'"
       - name: Attach SBOM to image
         run: |
           syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json=${{ needs.build.outputs.digest }}-spdx.json
@@ -203,7 +203,7 @@ jobs:
                           
       - name: Verify SPDX SBOM
         run: |
-          COSIGN_EXPERIMENTAL=1 cosign verify --sbom ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}"
+          COSIGN_EXPERIMENTAL=1 cosign verify-attestation ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == \"https://spdx.dev/Document\") | .predicate.Data | fromjson'
 
 
 
