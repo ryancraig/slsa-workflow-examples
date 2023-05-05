@@ -203,7 +203,9 @@ jobs:
                           
       - name: Verify SPDX SBOM
         run: |
-          COSIGN_EXPERIMENTAL=1 cosign verify-attestation --certificate-identity-regexp "https://github.com/ryancraig/slsa-workflow-examples/.*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == "https://spdx.dev/Document") | .predicate | fromjson'
+          # COSIGN_EXPERIMENTAL=1 cosign verify-attestation --certificate-identity-regexp "https://github.com/ryancraig/slsa-workflow-examples/.*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | select(.predicateType == "https://spdx.dev/Document") | .predicate | fromjson'
+          COSIGN_EXPERIMENTAL=1 cosign verify-attestation --certificate-identity-regexp "https://github.com/ryancraig/slsa-workflow-examples/.*" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} | jq '.payload |= @base64d | .payload | fromjson | .predicate | fromjson'
+
 
 
 
