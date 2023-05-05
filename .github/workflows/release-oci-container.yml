@@ -134,7 +134,7 @@ jobs:
 
       - name: Generate and upload SBOM
         run: |
-          syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json -f ${{ needs.build.outputs.digest }}.sbom.spdx.json
+          syft "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" -o spdx-json > ${{ needs.build.outputs.digest }}.sbom.spdx.json
           cosign upload sbom --artifact "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" ${{ needs.build.outputs.digest }}.sbom.spdx.json
           echo "y" | cosign sign sbom "${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }}" --oidc-issuer https://token.actions.githubusercontent.com
 
