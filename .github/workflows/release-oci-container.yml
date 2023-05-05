@@ -148,7 +148,7 @@ jobs:
         run: |
           MODIFIED_DIGEST=$(echo "${{ needs.build.outputs.digest }}" | sed 's/sha256:/sha256-/')
           echo $MODIFIED_DIGEST
-          COSIGN_EXPERIMENTAL=1 cosign verify --certificate-oidc-issuer "https://token.actions.githubusercontent.com --certificate-identity-regexp https://github.com/ryancraig/slsa-workflow-examples/.github/workflows/release-oci-container.yml@.* ${{ needs.build.outputs.image }}:$MODIFIED_DIGEST.sbom
+          COSIGN_EXPERIMENTAL=1 cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp https://github.com/ryancraig/slsa-workflow-examples/.github/workflows/release-oci-container.yml@.* ${{ needs.build.outputs.image }}:$MODIFIED_DIGEST.sbom
 
           # echo "::notice title=Verify SBOM signature::COSIGN_EXPERIMENTAL=1 cosign verify --certificate-oidc-issuer "https://token.actions.githubusercontent.com --certificate-identity-regexp https://github.com/ryancraig/slsa-workflow-examples/.github/workflows/release-oci-container.yml@.* ${{ needs.build.outputs.image }}:$MODIFIED_DIGEST.sbom"
 
