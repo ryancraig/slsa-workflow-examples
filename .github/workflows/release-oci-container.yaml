@@ -183,7 +183,7 @@ jobs:
       - name: Verify image using slsa-verifier
         run: |
           slsa-verifier verify-image ${{ needs.build.outputs.image }}@${{ needs.build.outputs.digest }} \
-              --source-uri "${{ github.repository }}" \
+              --source-uri "git+${{ github.repository }}" \
               --source-tag ${{ github.ref_name }}
 
 
